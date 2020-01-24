@@ -20,4 +20,5 @@ class Person(db.Model):
             "email": self.email,
             "phone": self.phone,
             "address": self.address,
+            "id": self.id
         }

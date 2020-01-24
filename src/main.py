@@ -9,6 +9,11 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from models import db
 from models import Person
+from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request
+from flask_jwt_simple import (
+    JWTManager, jwt_required, create_jwt, get_jwt_identity
+)
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -17,6 +22,49 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
+
+# Setup the Flask-JWT-Simple extension
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
+jwt = JWTManager(app)
+
+# Provide a method to create access tokens. The create_jwt()
+# function is used to actually generate the token
+@app.route('/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+
+    params = request.get_json()
+    username = params.get('username', None)
+    password = params.get('password', None)
+
+    if not username:
+        return jsonify({"msg": "Missing username parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+
+    if username != 'test' or password != 'test':
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    # check for user in database
+    usercheck = User.query.filter_by(username=username, password=password).first()
+
+    # if user not found
+    if usercheck == None:
+        return jsonify({"msg": "Invalid credentials provided"}), 401
+
+    #if user found, Identity can be any data that is json serializable
+    ret = {'jwt': create_jwt(identity=username)}
+    return jsonify(ret), 200
+
+# Protect a view with jwt_required, which requires a valid jwt
+# to be present in the headers.
+@app.route('/protected', methods=['GET'])
+@jwt_required
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    return jsonify({'hello_from': get_jwt_identity()}), 200
+
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -42,28 +90,33 @@ def handle_query():
         db.session.commit()
         return jsonify(user1.id), 200
 
-@app.route('/person/<int:id>', methods=['GET','PUT','DELETE'])
+@app.route('/person/person_id', methods=['GET','PUT','DELETE'])
 def handle_person(person_id):
     if request.method == 'GET':
         user1 = Person.query.get(person_id)
         return jsonify(all_people), 200
 
     if request.method == 'PUT':
-        
+        user1 = request.get_json()
         if user1 is None:
-            raise APIException('User not found', status_code=404)
+            return 'User not found', 404
+
+        user1 = Person.query.get(person_id)
+        if user1 is None:
+            return 'User not found', 404
 
     if "username" in body:
         user1.username = body["username"]
     if "email" in body:
         user1.email = body["email"]
     if "phone" in body:
-        user1.email = body["phone"]
+        user1.phone = body["phone"]
     if "full_name" in body:
-        user1.email = body["full_name"]
+        user1.full_name = body["full_name"]
     if "address" in body:
-        user1.email = body["address"]
+        user1.address = body["address"]
     db.session.commit()
+    return jsonify(user1.serialize()), 200
     
     if request.method =='DELETE':
         user1 = Person.query.get(person_id)
