@@ -90,15 +90,15 @@ def handle_query():
         db.session.commit()
         return jsonify(user1.id), 200
 
-@app.route('/person/person_id', methods=['GET','PUT','DELETE'])
+@app.route('/person_id/<int:person_id>', methods=['GET','PUT','DELETE'])
 def handle_person(person_id):
     if request.method == 'GET':
         user1 = Person.query.get(person_id)
         return jsonify(all_people), 200
 
     if request.method == 'PUT':
-        user1 = request.get_json()
-        if user1 is None:
+        body = request.get_json()
+        if body is None:
             return 'User not found', 404
 
         user1 = Person.query.get(person_id)
@@ -116,15 +116,25 @@ def handle_person(person_id):
     if "address" in body:
         user1.address = body["address"]
     db.session.commit()
+
     return jsonify(user1.serialize()), 200
-    
-    if request.method =='DELETE':
+
+    # GET request
+    if request.method == 'GET':
         user1 = Person.query.get(person_id)
-    if user1 is None:
-        raise APIException('User not found', status_code=404)
-    db.session.delete(user1)
-    db.session.commit()
-    return jsonify(user1), 200
+        if user1 is None:
+            raise APIException('User not found', status_code=404)
+
+        return jsonify(user1.serialize()), 200
+    
+    if request.method == 'DELETE':
+        user1 = Person.query.get(person_id)
+        if user1 is None:
+            raise APIException('User not found', status_code=404)
+        db.session.delete(user1)
+        db.session.commit()
+        return "ok", 200
+    return "Invalid Method", 404
 
 @app.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
