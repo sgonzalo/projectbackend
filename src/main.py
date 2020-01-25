@@ -17,7 +17,7 @@ from flask_jwt_simple import (
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
+app.config['SQLALCHEMY_DATABASE_URI'] = ""#os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db)
 db.init_app(app)
@@ -122,7 +122,7 @@ def get_single_contact(contact_id):
         return jsonify(contact1.serialize()), 200
     # DELETE request
     if request.method == 'DELETE':
-        contact1 = Contact.query.get(contact_id)
+        contact1 = Person.query.get(contact_id)
         if contact1 is None:
             raise APIException('User not found', status_code=404)
         db.session.delete(contact1)
