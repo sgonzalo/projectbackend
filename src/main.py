@@ -90,34 +90,35 @@ def handle_query():
         db.session.commit()
         return jsonify(user1.id), 200
 
-@app.route('/person_id/<int:person_id>', methods=['GET','PUT','DELETE'])
+@app.route('/person/<int:person_id>', methods=['GET','PUT','DELETE'])
 def handle_person(person_id):
+
     if request.method == 'GET':
         user1 = Person.query.get(person_id)
-        return jsonify(all_people), 200
-
+        return jsonify(user1), 200
+    #PUT request
     if request.method == 'PUT':
         body = request.get_json()
         if body is None:
-            return 'User not found', 404
+            raise APIException("You need to specify the request body as a json object", status_code=400)
 
         user1 = Person.query.get(person_id)
         if user1 is None:
             return 'User not found', 404
 
-    if "username" in body:
-        user1.username = body["username"]
-    if "email" in body:
-        user1.email = body["email"]
-    if "phone" in body:
-        user1.phone = body["phone"]
-    if "full_name" in body:
-        user1.full_name = body["full_name"]
-    if "address" in body:
-        user1.address = body["address"]
-    db.session.commit()
+        if "username" in body:
+            user1.username = body["username"]
+        if "email" in body:
+            user1.email = body["email"]
+        if "phone" in body:
+            user1.phone = body["phone"]
+        if "full_name" in body:
+            user1.full_name = body["full_name"]
+        if "address" in body:
+            user1.address = body["address"]
+        db.session.commit()
 
-    return jsonify(user1.serialize()), 200
+        return jsonify(user1.serialize()), 200
 
     # GET request
     if request.method == 'GET':
@@ -136,14 +137,6 @@ def handle_person(person_id):
         return "ok", 200
     return "Invalid Method", 404
 
-@app.route('/hello', methods=['POST', 'GET'])
-def handle_hello():
-
-    response_body = {
-        "hello": "world"
-    }
-
-    return jsonify(response_body), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
